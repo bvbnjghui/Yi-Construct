@@ -19,6 +19,7 @@ export default function gameEngine() {
 
         // Combat State
         gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'gameover', 'victory'
+        showHelp: false,
 
         player: {
             hp: 50,
@@ -181,6 +182,15 @@ export default function gameEngine() {
             this.lang = this.lang === 'zh' ? 'en' : 'zh';
         },
 
+        toggleHelp() {
+            this.showHelp = !this.showHelp;
+        },
+
+        backToMenu() {
+            this.gameState = 'menu';
+            this.lines = [];
+        },
+
         log(msg) {
             this.combatLog.unshift(msg);
             if (this.combatLog.length > 5) this.combatLog.pop();
@@ -225,7 +235,26 @@ export default function gameEngine() {
                 gameOver: this.lang === 'zh' ? '你被打敗了' : 'DEFEATED',
                 victory: this.lang === 'zh' ? '勝利!' : 'VICTORY!',
                 hp: 'HP',
-                block: this.lang === 'zh' ? '護盾' : 'Block'
+                block: this.lang === 'zh' ? '護盾' : 'Block',
+                howToPlay: this.lang === 'zh' ? '遊戲說明' : 'How to Play',
+                backToMenu: this.lang === 'zh' ? '回到選單' : 'Menu',
+                close: this.lang === 'zh' ? '關閉' : 'Close',
+                helpTitle: this.lang === 'zh' ? '遊戲說明' : 'Instructions',
+                helpContent: this.lang === 'zh'
+                    ? [
+                        "1. 構建六爻卦象來施放技能。",
+                        "2. 每個卦由兩個八卦(上卦/下卦)組成。",
+                        "3. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
+                        "4. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
+                        "5. 目標: 在被擊敗前打倒心魔。"
+                    ]
+                    : [
+                        "1. Build Hexagrams to cast spells.",
+                        "2. Each Hexagram has Lower & Upper Trigrams.",
+                        "3. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
+                        "4. Resonance: If Lower == Upper, stats x1.5!",
+                        "5. Goal: Defeat the Inner Demon."
+                    ]
             };
         }
     };

@@ -74,11 +74,43 @@
                 <span x-show="gameState === 'gameover'">💀</span>
                 <span x-show="gameState === 'menu'">☯️</span>
             </div>
-            <button @click="startGame()"
-                class="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-105 active:scale-95"
-                x-text="gameState === 'menu' ? ui.start : ui.retry">
-            </button>
+            <div class="flex flex-col gap-4">
+                <button @click="startGame()"
+                    class="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-105 active:scale-95"
+                    x-text="gameState === 'menu' ? ui.start : ui.retry">
+                </button>
+                <button @click="toggleHelp()" x-show="gameState === 'menu'"
+                    class="px-8 py-2 border border-slate-600 hover:bg-slate-800 text-slate-300 font-bold rounded-full transition-all"
+                    x-text="ui.howToPlay">
+                </button>
+            </div>
         </div>
+
+        <!-- === HELP MODAL === -->
+        <div x-show="showHelp"
+            class="absolute inset-0 z-[60] bg-black/80 backdrop-blur flex items-center justify-center p-4" x-transition
+            x-cloak>
+            <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl relative">
+                <button @click="toggleHelp()" class="absolute top-2 right-2 text-slate-500 hover:text-white">✕</button>
+                <h2 class="text-xl font-bold text-amber-500 mb-4" x-text="ui.helpTitle"></h2>
+                <ul class="space-y-2 text-sm text-slate-300 list-disc pl-4">
+                    <template x-for="item in ui.helpContent">
+                        <li x-text="item"></li>
+                    </template>
+                </ul>
+                <div class="mt-6 text-center">
+                    <button @click="toggleHelp()"
+                        class="px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold"
+                        x-text="ui.close"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === BACK TO MENU BUTTON === -->
+        <button @click="backToMenu()" x-show="gameState === 'player_turn' || gameState === 'enemy_turn'"
+            class="absolute top-4 left-4 z-40 px-2 py-1 text-[10px] font-bold text-slate-500 border border-slate-700 rounded hover:bg-slate-800 hover:text-slate-300 transition-colors"
+            x-text="ui.backToMenu">
+        </button>
 
         <!-- === ENEMY AREA (TOP) === -->
         <div
