@@ -12,13 +12,57 @@ const TRIGRAM_STATS = {
     7: { name: { zh: "天", en: "Heaven" }, atk: 8, def: 0, heal: 0, icon: "☰" }
 };
 
+// 生成變爻卡池（56 張）
+function generateChangingCardsPool() {
+    const pool = [];
+    let id = 1000;
+
+    // 動爻組合（相對位置 0, 1, 2）
+    const combinations = [
+        // 1 個動爻
+        { lines: [0], name: { zh: '初', en: '①' } },
+        { lines: [1], name: { zh: '二', en: '②' } },
+        { lines: [2], name: { zh: '三', en: '③' } },
+        // 2 個動爻
+        { lines: [0, 1], name: { zh: '初二', en: '①②' } },
+        { lines: [0, 2], name: { zh: '初三', en: '①③' } },
+        { lines: [1, 2], name: { zh: '二三', en: '②③' } },
+        // 3 個動爻
+        { lines: [0, 1, 2], name: { zh: '初二三', en: '①②③' } }
+    ];
+
+    for (let type = 0; type < 8; type++) {
+        const baseStats = TRIGRAM_STATS[type];
+
+        for (const combo of combinations) {
+            pool.push({
+                id: id++,
+                type,
+                cost: 1,
+                name: {
+                    zh: `${baseStats.name.zh} ${combo.name.zh}爻動`,
+                    en: `${baseStats.name.en} ${combo.name.en}`
+                },
+                icon: baseStats.icon,
+                stats: baseStats,
+                changingLines: combo.lines,
+                isChanging: true
+            });
+        }
+    }
+
+    return pool;
+}
+
+const CHANGING_CARDS_POOL = generateChangingCardsPool();
+
 export default function gameEngine() {
     return {
         lines: [],
         lang: 'zh',
 
         // Combat State
-        gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'selection', 'gameover', 'victory'
+        gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'selection', 'reward', 'gameover', 'victory'
         showHelp: false,
 
         player: {
@@ -46,6 +90,13 @@ export default function gameEngine() {
         // Selection State
         selectionOptions: [],
         pendingHexagram: null,
+
+        // 變爻系統狀態
+        rewardCards: [],
+        transformationData: null,
+        selectionPhase: null,  // 'original' | 'transformed'
+        bonusMultiplier: 1.0,
+        playedCardsThisTurn: [],
 
         combatLog: [],
 
@@ -148,6 +199,9 @@ export default function gameEngine() {
             // Move to Discard
             this.hand.splice(cardIndex, 1);
             this.discard.push(card);
+
+            // 追蹤打出的卡牌（包含變爻資訊）
+            this.playedCardsThisTurn.push(card);
         },
 
         undoLastCard() {
@@ -165,7 +219,68 @@ export default function gameEngine() {
             // Refund energy
             this.player.energy = Math.min(this.player.energy + card.cost, this.player.maxEnergy);
 
+            // 移除追蹤的卡牌
+            this.playedCardsThisTurn.pop();
+
             this.log(this.lang === 'zh' ? "撤回卡牌" : "Card undone");
+        },
+
+        // 計算變卦
+        calculateTransformation(lines, playedCards) {
+            // 收集所有動爻的絕對位置（0-5）
+            const changingPositions = [];
+
+            playedCards.forEach((card, cardIndex) => {
+                if (card.isChanging) {
+                    // 將相對位置轉換為絕對位置
+                    const offset = cardIndex * 3;
+                    card.changingLines.forEach(relativePos => {
+                        changingPositions.push(offset + relativePos);
+                    });
+                }
+            });
+
+            if (changingPositions.length === 0) {
+                return { hasTransformation: false };
+            }
+
+            // 計算本卦
+            const originalHex = lines.reduce((acc, val, idx) => acc + (val << idx), 0);
+
+            // 計算變卦（反轉動爻）
+            const transformedLines = [...lines];
+            changingPositions.forEach(pos => {
+                transformedLines[pos] = 1 - transformedLines[pos];
+            });
+            const transformedHex = transformedLines.reduce((acc, val, idx) => acc + (val << idx), 0);
+
+            // 計算權重
+            const count = changingPositions.length;
+            let originalWeight, transformedWeight;
+
+            if (count <= 2) {
+                originalWeight = 1.0;
+                transformedWeight = 0.0;
+            } else if (count === 3) {
+                originalWeight = 0.5;
+                transformedWeight = 0.5;
+            } else if (count <= 5) {
+                originalWeight = 0.2;
+                transformedWeight = 0.8;
+            } else {
+                originalWeight = 0.0;
+                transformedWeight = 1.0;
+            }
+
+            return {
+                hasTransformation: true,
+                originalHex,
+                transformedHex,
+                transformedLines,
+                changingPositions,
+                originalWeight,
+                transformedWeight
+            };
         },
 
         endTurn() {
@@ -205,34 +320,84 @@ export default function gameEngine() {
         castHexagram() {
             if (this.lines.length !== 6) return;
 
-            // 1. Calculate Stats (Base)
+            // 計算變卦資訊
+            const transformation = this.calculateTransformation(
+                this.lines,
+                this.playedCardsThisTurn
+            );
+
+            // 計算本卦屬性
             const lowerVal = this.lines[0] + (this.lines[1] << 1) + (this.lines[2] << 2);
             const upperVal = this.lines[3] + (this.lines[4] << 1) + (this.lines[5] << 2);
-
             const lower = TRIGRAM_STATS[lowerVal];
             const upper = TRIGRAM_STATS[upperVal];
+            const originalAtk = lower.atk + upper.atk;
+            const originalDef = lower.def + upper.def;
+            const originalHeal = lower.heal + upper.heal;
 
-            let atk = lower.atk + upper.atk;
-            let def = lower.def + upper.def;
-            let heal = lower.heal + upper.heal;
+            let finalAtk, finalDef, finalHeal;
 
-            // 2. Store Pending Hexagram
-            const hexVal = this.currentHexValue;
-            this.pendingHexagram = {
-                hexVal,
-                atk,
-                def,
-                heal,
-                lowerVal,
-                upperVal
-            };
+            if (transformation.hasTransformation) {
+                // 計算變卦屬性
+                const tLines = transformation.transformedLines;
+                const tLowerVal = tLines[0] + (tLines[1] << 1) + (tLines[2] << 2);
+                const tUpperVal = tLines[3] + (tLines[4] << 1) + (tLines[5] << 2);
+                const tLower = TRIGRAM_STATS[tLowerVal];
+                const tUpper = TRIGRAM_STATS[tUpperVal];
+                const transformedAtk = tLower.atk + tUpper.atk;
+                const transformedDef = tLower.def + tUpper.def;
+                const transformedHeal = tLower.heal + tUpper.heal;
 
-            // 3. Trigger Selection
+                // 加權計算
+                finalAtk = Math.floor(
+                    originalAtk * transformation.originalWeight +
+                    transformedAtk * transformation.transformedWeight
+                );
+                finalDef = Math.floor(
+                    originalDef * transformation.originalWeight +
+                    transformedDef * transformation.transformedWeight
+                );
+                finalHeal = Math.floor(
+                    originalHeal * transformation.originalWeight +
+                    transformedHeal * transformation.transformedWeight
+                );
+
+                // 儲存資訊
+                this.pendingHexagram = {
+                    hexVal: transformation.originalHex,
+                    transformedHexVal: transformation.transformedHex,
+                    atk: finalAtk,
+                    def: finalDef,
+                    heal: finalHeal,
+                    changingCount: transformation.changingPositions.length
+                };
+
+                this.transformationData = transformation;
+                this.selectionPhase = 'original';
+                this.bonusMultiplier = 1.0;
+            } else {
+                // 無變卦
+                this.pendingHexagram = {
+                    hexVal: this.currentHexValue,
+                    atk: originalAtk,
+                    def: originalDef,
+                    heal: originalHeal,
+                    changingCount: 0
+                };
+            }
+
             this.startSelection();
         },
 
         startSelection() {
-            const hexVal = this.pendingHexagram.hexVal;
+            let hexVal;
+
+            if (this.selectionPhase === 'transformed') {
+                hexVal = this.pendingHexagram.transformedHexVal;
+            } else {
+                hexVal = this.pendingHexagram.hexVal;
+            }
+
             const correctHex = HEX_DATA[hexVal];
 
             // Generate 3 random incorrect options
@@ -264,58 +429,116 @@ export default function gameEngine() {
 
         confirmSelection(optionIndex) {
             const selected = this.selectionOptions[optionIndex];
-            const { atk, def, heal } = this.pendingHexagram;
 
-            let finalAtk = atk;
-            let finalDef = def;
-            let finalHeal = heal;
-            let bonus = false;
-
-            // Apply Bonus if Correct
-            if (selected.isCorrect) {
-                finalAtk = Math.floor(atk * 1.5);
-                finalDef = Math.floor(def * 1.5);
-                finalHeal = Math.floor(heal * 1.5);
-                bonus = true;
+            // 無變爻的情況（selectionPhase 為 null）
+            if (!this.transformationData) {
+                // 單次測驗
+                const bonus = selected.isCorrect ? 1.5 : 1.0;
+                this.executeHexagram(
+                    this.pendingHexagram.atk,
+                    this.pendingHexagram.def,
+                    this.pendingHexagram.heal,
+                    bonus,
+                    selected.name
+                );
+                return;
             }
 
-            // Execute Hexagram
-            this.executeHexagram(finalAtk, finalDef, finalHeal, bonus, selected.name);
+            // 有變爻的雙重測驗
+            if (this.selectionPhase === 'original') {
+                // 本卦測驗
+                if (selected.isCorrect) {
+                    this.bonusMultiplier = 1.5;
+                }
 
-            // Reset Selection State
-            this.selectionOptions = [];
-            this.pendingHexagram = null;
-            this.gameState = 'player_turn';
+                // 進入變卦測驗
+                this.selectionPhase = 'transformed';
+                this.startSelection();
+            } else if (this.selectionPhase === 'transformed') {
+                // 變卦測驗
+                if (selected.isCorrect) {
+                    this.bonusMultiplier *= 1.5;
+                }
+
+                // 施放法術
+                this.executeHexagram(
+                    this.pendingHexagram.atk,
+                    this.pendingHexagram.def,
+                    this.pendingHexagram.heal,
+                    this.bonusMultiplier,
+                    selected.name
+                );
+            }
         },
 
         executeHexagram(atk, def, heal, bonus, hexName) {
-            // Log
+            // 應用加成
+            const finalAtk = Math.floor(atk * bonus);
+            const finalDef = Math.floor(def * bonus);
+            const finalHeal = Math.floor(heal * bonus);
+
+            // 日誌
             this.log(`${this.lang === 'zh' ? '施放' : 'Cast'}: ${hexName[this.lang]}!`);
-            if (bonus) this.log(this.lang === 'zh' ? ">> 正確! 加成! <<" : ">> CORRECT! BONUS! <<");
+
+            if (this.pendingHexagram.changingCount > 0) {
+                this.log(`${this.pendingHexagram.changingCount} ${this.lang === 'zh' ? '爻動' : 'changing line(s)'}`);
+            }
+
+            if (bonus >= 2.25) {
+                this.log(this.lang === 'zh' ? ">> 雙重正確！超級加成！<<" : ">> DOUBLE CORRECT! SUPER BONUS! <<");
+            } else if (bonus >= 1.5) {
+                this.log(this.lang === 'zh' ? ">> 正確！加成！<<" : ">> CORRECT! BONUS! <<");
+            }
 
             // Apply Effects
-            if (atk > 0) {
-                this.enemy.hp -= atk;
-                this.log(`${this.lang === 'zh' ? '造成' : 'Dealt'} ${atk} ${this.lang === 'zh' ? '傷害' : 'DMG'}!`);
+            if (finalAtk > 0) {
+                this.enemy.hp -= finalAtk;
+                this.log(`${this.lang === 'zh' ? '造成' : 'Dealt'} ${finalAtk} ${this.lang === 'zh' ? '傷害' : 'DMG'}!`);
             }
-            if (def > 0) {
-                this.player.block += def;
-                this.log(`${this.lang === 'zh' ? '獲得' : 'Gained'} ${def} ${this.lang === 'zh' ? '護盾' : 'Block'}!`);
+            if (finalDef > 0) {
+                this.player.block += finalDef;
+                this.log(`${this.lang === 'zh' ? '獲得' : 'Gained'} ${finalDef} ${this.lang === 'zh' ? '護盾' : 'Block'}!`);
             }
-            if (heal > 0) {
-                this.player.hp = Math.min(this.player.hp + heal, this.player.maxHp);
-                this.log(`${this.lang === 'zh' ? '恢復' : 'Healed'} ${heal} HP!`);
+            if (finalHeal > 0) {
+                this.player.hp = Math.min(this.player.hp + finalHeal, this.player.maxHp);
+                this.log(`${this.lang === 'zh' ? '恢復' : 'Healed'} ${finalHeal} HP!`);
             }
 
             // Check Win
             if (this.enemy.hp <= 0) {
                 this.enemy.hp = 0;
-                this.gameState = 'victory';
+                this.generateRewardCards();
                 return;
             }
 
             // Consume Stack
             this.lines = [];
+            this.playedCardsThisTurn = [];
+            this.transformationData = null;
+            this.selectionPhase = null;
+            this.bonusMultiplier = 1.0;
+            this.pendingHexagram = null;
+            this.selectionOptions = [];
+            this.gameState = 'player_turn';
+        },
+
+        // 獎勵系統
+        generateRewardCards() {
+            const shuffled = [...CHANGING_CARDS_POOL].sort(() => Math.random() - 0.5);
+            this.rewardCards = shuffled.slice(0, 3);
+            this.gameState = 'reward';
+        },
+
+        addCardToDeck(cardIndex) {
+            const card = this.rewardCards[cardIndex];
+            this.deck.push({ ...card, id: Date.now() + Math.random() });
+            this.rewardCards = [];
+            this.gameState = 'victory';
+        },
+
+        skipReward() {
+            this.rewardCards = [];
+            this.gameState = 'victory';
         },
 
         enemyTurn() {
