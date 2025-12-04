@@ -25,7 +25,8 @@ export default function gameEngine() {
             hp: 50,
             maxHp: 50,
             block: 0,
-            energy: 3 // Not used yet, but good for future
+            energy: 3,
+            maxEnergy: 3
         },
 
         enemy: {
@@ -36,6 +37,11 @@ export default function gameEngine() {
             intentVal: 0,
             icon: "👹"
         },
+
+        // Deck Builder State
+        deck: [],
+        hand: [],
+        discard: [],
 
         combatLog: [],
 
@@ -50,17 +56,99 @@ export default function gameEngine() {
             this.player.hp = 50;
             this.player.maxHp = 50;
             this.player.block = 0;
+            this.player.energy = 3;
             this.enemy.hp = 60;
             this.enemy.maxHp = 60;
             this.lines = [];
             this.combatLog = [];
+
+            this.initDeck();
+            this.shuffle(this.deck);
+            this.hand = [];
+            this.discard = [];
+            this.drawCards(5);
+
             this.startTurn();
+        },
+
+        initDeck() {
+            this.deck = [];
+            let idCounter = 0;
+            // 6 Yang (1), 6 Yin (0)
+            for (let i = 0; i < 6; i++) {
+                this.deck.push({ id: idCounter++, type: 1, cost: 1, name: { zh: '陽', en: 'Yang' } });
+                this.deck.push({ id: idCounter++, type: 0, cost: 1, name: { zh: '陰', en: 'Yin' } });
+            }
+        },
+
+        shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        },
+
+        drawCards(count) {
+            for (let i = 0; i < count; i++) {
+                if (this.deck.length === 0) {
+                    if (this.discard.length === 0) break; // No more cards
+                    // Reshuffle discard into deck
+                    this.deck = [...this.discard];
+                    this.discard = [];
+                    this.shuffle(this.deck);
+                    this.log(this.lang === 'zh' ? ">> 洗牌 <<" : ">> Shuffle <<");
+                }
+                if (this.deck.length > 0) {
+                    this.hand.push(this.deck.pop());
+                }
+            }
+        },
+
+        playCard(cardIndex) {
+            if (this.gameState !== 'player_turn') return;
+
+            const card = this.hand[cardIndex];
+
+            // Check Energy
+            if (this.player.energy < card.cost) {
+                this.log(this.lang === 'zh' ? "氣不足!" : "Not enough Energy!");
+                return;
+            }
+
+            // Check Stack Limit
+            if (this.lines.length >= 6) {
+                this.log(this.lang === 'zh' ? "卦象已滿!" : "Hexagram full!");
+                return;
+            }
+
+            // Pay Cost
+            this.player.energy -= card.cost;
+
+            // Effect: Add Line
+            this.lines.push(card.type);
+
+            // Move to Discard
+            this.hand.splice(cardIndex, 1);
+            this.discard.push(card);
+        },
+
+        endTurn() {
+            if (this.gameState !== 'player_turn') return;
+
+            // Discard Hand
+            while (this.hand.length > 0) {
+                this.discard.push(this.hand.pop());
+            }
+
+            this.enemyTurn();
         },
 
         startTurn() {
             this.gameState = 'player_turn';
             this.player.block = 0; // Reset block
+            this.player.energy = this.player.maxEnergy; // Reset Energy
             this.generateEnemyIntent();
+            this.drawCards(5); // Draw new hand
             this.log(this.lang === 'zh' ? "--- 玩家回合 ---" : "--- Player Turn ---");
         },
 
@@ -70,18 +158,12 @@ export default function gameEngine() {
                 this.enemy.intent = 'attack';
                 this.enemy.intentVal = Math.floor(Math.random() * 6) + 8; // 8-13 dmg
             } else if (rand < 0.9) {
-                this.enemy.intent = 'defend'; // Self-heal or buff in future? For now just wait.
-                this.enemy.intentVal = 0; // Placeholder
+                this.enemy.intent = 'defend';
+                this.enemy.intentVal = 0;
             } else {
                 this.enemy.intent = 'attack_heavy';
                 this.enemy.intentVal = 15;
             }
-        },
-
-        addLine(type) {
-            if (this.gameState !== 'player_turn') return;
-            if (this.lines.length >= 6) return;
-            this.lines.push(type);
         },
 
         castHexagram() {
@@ -134,9 +216,8 @@ export default function gameEngine() {
                 return;
             }
 
-            // 4. End Turn
+            // 4. Consume Stack
             this.lines = [];
-            this.enemyTurn();
         },
 
         enemyTurn() {
@@ -156,7 +237,6 @@ export default function gameEngine() {
                     if (dmg > 0) {
                         this.player.hp -= dmg;
                         this.log(`${this.lang === 'zh' ? '受到' : 'Took'} ${dmg} DMG!`);
-                        // Shake effect trigger?
                     } else {
                         this.log(this.lang === 'zh' ? "完全防禦!" : "Fully Blocked!");
                     }
@@ -171,7 +251,7 @@ export default function gameEngine() {
                 } else {
                     this.startTurn();
                 }
-            }, 1000); // 1s delay for dramatic effect
+            }, 1000);
         },
 
         reset() {
@@ -225,8 +305,6 @@ export default function gameEngine() {
 
         get ui() {
             return {
-                addYin: this.lang === 'zh' ? '陰' : 'Yin',
-                addYang: this.lang === 'zh' ? '陽' : 'Yang',
                 cast: this.lang === 'zh' ? '施法' : 'CAST',
                 reset: this.lang === 'zh' ? '重置' : 'Reset',
                 langBtn: this.lang === 'zh' ? 'English' : '中文',
@@ -239,21 +317,26 @@ export default function gameEngine() {
                 howToPlay: this.lang === 'zh' ? '遊戲說明' : 'How to Play',
                 backToMenu: this.lang === 'zh' ? '回到選單' : 'Menu',
                 close: this.lang === 'zh' ? '關閉' : 'Close',
+                endTurn: this.lang === 'zh' ? '結束回合' : 'End Turn',
+                deck: this.lang === 'zh' ? '牌庫' : 'Deck',
+                discard: this.lang === 'zh' ? '棄牌' : 'Discard',
                 helpTitle: this.lang === 'zh' ? '遊戲說明' : 'Instructions',
                 helpContent: this.lang === 'zh'
                     ? [
-                        "1. 構建六爻卦象來施放技能。",
-                        "2. 每個卦由兩個八卦(上卦/下卦)組成。",
-                        "3. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
-                        "4. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
-                        "5. 目標: 在被擊敗前打倒心魔。"
+                        "1. 從手牌打出陰陽爻 (消耗 1 氣)。",
+                        "2. 構建六爻卦象來施放技能。",
+                        "3. 每個卦由兩個八卦(上卦/下卦)組成。",
+                        "4. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
+                        "5. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
+                        "6. 點擊 '結束回合' 補充手牌和氣。"
                     ]
                     : [
-                        "1. Build Hexagrams to cast spells.",
-                        "2. Each Hexagram has Lower & Upper Trigrams.",
-                        "3. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
-                        "4. Resonance: If Lower == Upper, stats x1.5!",
-                        "5. Goal: Defeat the Inner Demon."
+                        "1. Play Yin/Yang cards from hand (Cost 1 Energy).",
+                        "2. Build Hexagrams to cast spells.",
+                        "3. Each Hexagram has Lower & Upper Trigrams.",
+                        "4. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
+                        "5. Resonance: If Lower == Upper, stats x1.5!",
+                        "6. Click 'End Turn' to draw new cards and restore Energy."
                     ]
             };
         }
