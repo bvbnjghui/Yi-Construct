@@ -18,7 +18,7 @@ export default function gameEngine() {
         lang: 'zh',
 
         // Combat State
-        gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'gameover', 'victory'
+        gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'selection', 'gameover', 'victory'
         showHelp: false,
 
         player: {
@@ -42,6 +42,10 @@ export default function gameEngine() {
         deck: [],
         hand: [],
         discard: [],
+
+        // Selection State
+        selectionOptions: [],
+        pendingHexagram: null,
 
         combatLog: [],
 
@@ -183,7 +187,7 @@ export default function gameEngine() {
         castHexagram() {
             if (this.lines.length !== 6) return;
 
-            // 1. Calculate Stats
+            // 1. Calculate Stats (Base)
             const lowerVal = this.lines[0] + (this.lines[1] << 1) + (this.lines[2] << 2);
             const upperVal = this.lines[3] + (this.lines[4] << 1) + (this.lines[5] << 2);
 
@@ -194,22 +198,84 @@ export default function gameEngine() {
             let def = lower.def + upper.def;
             let heal = lower.heal + upper.heal;
 
-            // Resonance Bonus
-            let isResonance = false;
-            if (lowerVal === upperVal) {
-                atk = Math.floor(atk * 1.5);
-                def = Math.floor(def * 1.5);
-                heal = Math.floor(heal * 1.5);
-                isResonance = true;
+            // 2. Store Pending Hexagram
+            const hexVal = this.currentHexValue;
+            this.pendingHexagram = {
+                hexVal,
+                atk,
+                def,
+                heal,
+                lowerVal,
+                upperVal
+            };
+
+            // 3. Trigger Selection
+            this.startSelection();
+        },
+
+        startSelection() {
+            const hexVal = this.pendingHexagram.hexVal;
+            const correctHex = HEX_DATA[hexVal];
+
+            // Generate 3 random incorrect options
+            const allHexIds = Object.keys(HEX_DATA).map(Number);
+            const incorrectIds = allHexIds.filter(id => id !== hexVal);
+
+            // Shuffle and pick 3
+            this.shuffle(incorrectIds);
+            const randomIncorrect = incorrectIds.slice(0, 3);
+
+            // Build options array
+            const options = [
+                { id: hexVal, name: correctHex.name, description: correctHex.description, isCorrect: true },
+                ...randomIncorrect.map(id => ({
+                    id,
+                    name: HEX_DATA[id].name,
+                    description: HEX_DATA[id].description,
+                    isCorrect: false
+                }))
+            ];
+
+            // Shuffle options
+            this.shuffle(options);
+            this.selectionOptions = options;
+
+            // Change state
+            this.gameState = 'selection';
+        },
+
+        confirmSelection(optionIndex) {
+            const selected = this.selectionOptions[optionIndex];
+            const { atk, def, heal } = this.pendingHexagram;
+
+            let finalAtk = atk;
+            let finalDef = def;
+            let finalHeal = heal;
+            let bonus = false;
+
+            // Apply Bonus if Correct
+            if (selected.isCorrect) {
+                finalAtk = Math.floor(atk * 1.5);
+                finalDef = Math.floor(def * 1.5);
+                finalHeal = Math.floor(heal * 1.5);
+                bonus = true;
             }
 
-            // 2. Apply Effects
-            const hexVal = this.currentHexValue;
-            const hexName = HEX_DATA[hexVal] ? HEX_DATA[hexVal].name[this.lang] : "Unknown";
+            // Execute Hexagram
+            this.executeHexagram(finalAtk, finalDef, finalHeal, bonus, selected.name);
 
-            this.log(`${this.lang === 'zh' ? '施放' : 'Cast'}: ${hexName}!`);
-            if (isResonance) this.log(this.lang === 'zh' ? ">> 共鳴加成! <<" : ">> RESONANCE! <<");
+            // Reset Selection State
+            this.selectionOptions = [];
+            this.pendingHexagram = null;
+            this.gameState = 'player_turn';
+        },
 
+        executeHexagram(atk, def, heal, bonus, hexName) {
+            // Log
+            this.log(`${this.lang === 'zh' ? '施放' : 'Cast'}: ${hexName[this.lang]}!`);
+            if (bonus) this.log(this.lang === 'zh' ? ">> 正確! 加成! <<" : ">> CORRECT! BONUS! <<");
+
+            // Apply Effects
             if (atk > 0) {
                 this.enemy.hp -= atk;
                 this.log(`${this.lang === 'zh' ? '造成' : 'Dealt'} ${atk} ${this.lang === 'zh' ? '傷害' : 'DMG'}!`);
@@ -223,14 +289,14 @@ export default function gameEngine() {
                 this.log(`${this.lang === 'zh' ? '恢復' : 'Healed'} ${heal} HP!`);
             }
 
-            // 3. Check Win
+            // Check Win
             if (this.enemy.hp <= 0) {
                 this.enemy.hp = 0;
                 this.gameState = 'victory';
                 return;
             }
 
-            // 4. Consume Stack
+            // Consume Stack
             this.lines = [];
         },
 

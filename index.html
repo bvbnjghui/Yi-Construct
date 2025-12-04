@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- v3: Fixed Tooltip Clipping -->
+    <!-- v4: Added Hexagram Selection -->
     <title>Daoist Battler</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
@@ -113,6 +113,46 @@
                     <button @click="toggleHelp()"
                         class="px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white font-bold"
                         x-text="ui.close"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === SELECTION MODAL === -->
+        <div x-show="gameState === 'selection'"
+            class="absolute inset-0 z-[60] bg-black/90 backdrop-blur flex items-center justify-center p-4" x-transition
+            x-cloak>
+            <div class="bg-slate-900 border border-amber-600 rounded-xl p-6 max-w-sm w-full shadow-2xl relative">
+                <h2 class="text-xl font-bold text-amber-500 mb-2 text-center"
+                    x-text="lang === 'zh' ? '識別卦象' : 'Identify Hexagram'"></h2>
+
+                <!-- Hexagram Visual -->
+                <div class="bg-slate-950 rounded-lg border border-slate-800 p-3 mb-4 flex flex-col-reverse gap-1">
+                    <template x-for="(line, index) in lines" :key="index">
+                        <div class="w-full">
+                            <template x-if="line === 1">
+                                <div class="h-3 w-full bg-amber-500 rounded shadow-sm"></div>
+                            </template>
+                            <template x-if="line === 0">
+                                <div class="flex gap-2 h-3 w-full">
+                                    <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
+                                    <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Options -->
+                <div class="space-y-2">
+                    <template x-for="(option, index) in selectionOptions" :key="option.id">
+                        <button @click="confirmSelection(index)"
+                            class="w-full px-4 py-3 bg-slate-800 hover:bg-amber-600 border border-slate-600 hover:border-amber-500 rounded-lg text-left transition-all group">
+                            <div class="font-bold text-amber-400 group-hover:text-white" x-text="option.name[lang]">
+                            </div>
+                            <div class="text-xs text-slate-400 group-hover:text-slate-200 mt-1"
+                                x-text="option.description[lang]"></div>
+                        </button>
+                    </template>
                 </div>
             </div>
         </div>
