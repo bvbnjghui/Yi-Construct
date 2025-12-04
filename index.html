@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- v2: Fixed Scroll & Drag -->
     <title>Daoist Battler</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
@@ -44,6 +45,16 @@
             60% {
                 transform: translate3d(4px, 0, 0);
             }
+        }
+
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
@@ -228,18 +239,28 @@
             </div>
 
             <!-- Hand Area -->
-            <div class="flex-1 flex items-center justify-center gap-2 relative">
+            <div class="flex-1 flex items-center justify-center gap-4 relative px-16">
                 <!-- Deck Pile -->
-                <div class="absolute left-0 bottom-2 text-xs text-slate-500 flex flex-col items-center">
-                    <div class="w-8 h-10 bg-slate-800 border border-slate-700 rounded mb-1"></div>
-                    <span x-text="`${ui.deck}: ${deck.length}`"></span>
+                <div
+                    class="absolute left-2 bottom-4 text-xs text-slate-500 flex flex-col items-center group cursor-help">
+                    <div class="w-10 h-14 rounded mb-1 flex items-center justify-center text-lg transition-all duration-300"
+                        :class="deck.length > 0 ? 'bg-slate-800 border border-slate-600 shadow-[2px_2px_0_#334155,3px_3px_0_#1e293b]' : 'border-2 border-dashed border-slate-800 bg-transparent opacity-50'">
+                        <span x-show="deck.length > 0"
+                            class="opacity-30 group-hover:opacity-60 transition-opacity">☯️</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10px]" x-text="`${ui.deck}: ${deck.length}`"></span>
                 </div>
 
-                <!-- Cards -->
-                <div class="flex gap-2 items-end h-full pb-2 px-10 overflow-x-auto w-full justify-center">
+                <!-- Cards (Scrollable & Draggable) -->
+                <div class="flex gap-2 items-end h-full pb-2 overflow-x-auto w-full justify-start px-4 no-scrollbar cursor-grab active:cursor-grabbing"
+                    x-data="{ isDown: false, startX: 0, scrollLeft: 0, isDragging: false }"
+                    @mousedown="isDown = true; isDragging = false; startX = $event.pageX - $el.offsetLeft; scrollLeft = $el.scrollLeft"
+                    @mouseleave="isDown = false" @mouseup="isDown = false; setTimeout(() => isDragging = false, 50)"
+                    @mousemove="if(!isDown) return; $event.preventDefault(); const x = $event.pageX - $el.offsetLeft; const walk = (x - startX) * 2; $el.scrollLeft = scrollLeft - walk; isDragging = true">
+
                     <template x-for="(card, index) in hand" :key="card.id">
-                        <button @click="playCard(index)"
-                            class="w-20 h-28 rounded-lg shadow-lg border-2 flex flex-col items-center justify-center p-1 transition-transform hover:-translate-y-2 active:scale-95 relative group bg-slate-800 border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-100">
+                        <button @click="if(!isDragging) playCard(index)"
+                            class="w-20 h-28 rounded-lg shadow-lg border-2 flex flex-col items-center justify-center p-1 transition-transform hover:-translate-y-2 active:scale-95 relative group bg-slate-800 border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-100 shrink-0 select-none">
 
                             <!-- Cost -->
                             <div
@@ -265,12 +286,20 @@
                             </div>
                         </button>
                     </template>
+
+                    <!-- Spacer for right padding if needed -->
+                    <div class="w-2 shrink-0"></div>
                 </div>
 
                 <!-- Discard Pile -->
-                <div class="absolute right-0 bottom-2 text-xs text-slate-500 flex flex-col items-center">
-                    <div class="w-8 h-10 bg-slate-800 border border-slate-700 rounded mb-1"></div>
-                    <span x-text="`${ui.discard}: ${discard.length}`"></span>
+                <div
+                    class="absolute right-2 bottom-4 text-xs text-slate-500 flex flex-col items-center group cursor-help">
+                    <div class="w-10 h-14 rounded mb-1 flex items-center justify-center text-lg transition-all duration-300"
+                        :class="discard.length > 0 ? 'bg-slate-800 border border-slate-600 shadow-[2px_2px_0_#334155,3px_3px_0_#1e293b]' : 'border-2 border-dashed border-slate-800 bg-transparent opacity-50'">
+                        <span x-show="discard.length > 0"
+                            class="opacity-30 group-hover:opacity-60 transition-opacity">♻️</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10px]" x-text="`${ui.discard}: ${discard.length}`"></span>
                 </div>
             </div>
 
