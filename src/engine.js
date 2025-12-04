@@ -150,6 +150,24 @@ export default function gameEngine() {
             this.discard.push(card);
         },
 
+        undoLastCard() {
+            if (this.gameState !== 'player_turn') return;
+            if (this.lines.length < 3) return; // Need at least 3 lines to undo
+            if (this.discard.length === 0) return; // Need a card in discard
+
+            // Remove last 3 lines
+            this.lines.splice(-3, 3);
+
+            // Move last card from discard back to hand
+            const card = this.discard.pop();
+            this.hand.push(card);
+
+            // Refund energy
+            this.player.energy = Math.min(this.player.energy + card.cost, this.player.maxEnergy);
+
+            this.log(this.lang === 'zh' ? "撤回卡牌" : "Card undone");
+        },
+
         endTurn() {
             if (this.gameState !== 'player_turn') return;
 
