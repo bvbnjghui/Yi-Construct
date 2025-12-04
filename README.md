@@ -1,69 +1,124 @@
-# ☯️ Yi-Construct: Daoist Battler
+# ☯️ 易經構築：道士戰鬥
 
-**Yi-Construct** is a Roguelike Deckbuilder game built with **Alpine.js** and **Tailwind CSS**, inspired by *Slay the Spire* and the ancient Chinese classic *I Ching (Book of Changes)*.
+**易經構築**是一款結合 **Alpine.js** 和 **Tailwind CSS** 開發的 Roguelike 卡牌構築遊戲，靈感來自 *Slay the Spire* 和中國古典經典《易經》。
 
-Players assume the role of a Daoist cultivator fighting against their "Inner Demon" (心魔) by constructing Hexagrams (六爻) to cast powerful spells.
+玩家扮演道士修行者，透過打出八卦卡牌構築六爻卦象，施放強大法術對抗內心的「心魔」。
 
-![Game Screenshot](https://via.placeholder.com/800x450?text=Daoist+Battler+Gameplay)
+## ✨ 遊戲特色
 
-## ✨ Features
+### 🎴 八卦卡牌系統
+- **8 種獨特八卦**：每種代表不同元素和屬性
+  - **☰ 乾 (ㄑㄧㄢˊ)**：高攻擊 (8 ATK)
+  - **☷ 坤 (ㄎㄨㄣ)**：高防禦 (8 DEF)
+  - **☲ 離 (ㄌㄧˊ)**：最高攻擊 (10 ATK)
+  - **☵ 坎 (ㄎㄢˇ)**：平衡型 (3 ATK, 3 HEAL)
+  - **☳ 震 (ㄓㄣˋ)**：中等攻擊 (6 ATK)
+  - **☶ 艮 (ㄍㄣˋ)**：中等防禦 (6 DEF)
+  - **☴ 巽 (ㄒㄩㄣˋ)**：輕攻擊 (4 ATK)
+  - **☱ 兌 (ㄉㄨㄟˋ)**：平衡型 (4 ATK, 2 HEAL)
+- **16 張起始牌庫**：每種八卦各 2 張
+- **每張卡牌 3 爻**：每個八卦添加 3 條爻線組成卦象
 
-*   **Hexagram Spellcasting**: Construct spells line by line (Yin/Yang).
-*   **Trigram Stats System**:
-    *   **🔥 Fire (Li)**: Attack Damage.
-    *   **⛰️ Mountain (Gen)**: Defense (Block).
-    *   **💧 Water (Kan)**: Healing.
-    *   **⚡ Thunder (Zhen)**: Attack.
-    *   **☁️ Heaven (Qian)**: High Attack.
-    *   **🌍 Earth (Kun)**: High Defense.
-*   **Resonance Mechanic**: If the Upper Trigram matches the Lower Trigram (e.g., Heaven over Heaven), all stats are multiplied by **1.5x**!
-*   **Turn-Based Combat**: Strategic battles with enemy intent display (Attack/Defend).
-*   **Bilingual Support**: Fully localized in English and Traditional Chinese (繁體中文).
+### 🎯 卦象識別測驗
+- **知識考驗**：組成 6 爻後，需識別正確的卦象
+- **4 個選項**：從 4 個卦名和卦辭中選擇
+- **獎勵加成**：答對可獲得 **1.5 倍**屬性加成！
+- **注音標示**：所有卦象使用台灣注音符號標示
 
-## 🚀 How to Run
+### ♻️ 撤回功能
+- **撤回按鈕**：施法前可移除最後打出的卡牌
+- **完全退款**：卡牌返回手牌並恢復能量
+- **策略規劃**：隨時調整你的卦象構築
 
-This project uses vanilla HTML/JS and requires no build step. However, due to ES Module imports, it must be served via a local web server.
+### ⚔️ 回合制戰鬥
+- **能量系統**：每回合 3 點能量，每張卡牌消耗 1 點
+- **敵人意圖**：視覺化顯示敵人下回合行動
+- **護盾機制**：防禦值會保留到下次攻擊
+- **抽牌系統**：每回合抽 5 張牌，牌庫空時自動洗牌
 
-### Prerequisites
-*   Python (pre-installed on most systems) OR Node.js
+### 🌏 雙語支援
+- **語言**：繁體中文和英文
+- **隨時切換**：在選單中切換語言
+- **完整本地化**：所有 UI、卦象和描述
 
-### Steps
-1.  Clone or download the repository.
-2.  Open a terminal in the project folder.
-3.  Run a local server:
-    *   **Python**: `py -m http.server` (or `python3 -m http.server`)
-    *   **Node**: `npx serve`
-4.  Open your browser and go to `http://localhost:8000` (or the port shown in your terminal).
+## 🚀 如何執行
 
-## 🎮 How to Play
+本專案使用原生 HTML/JS，無需建置步驟。但由於使用 ES Module 匯入，必須透過本地網頁伺服器執行。
 
-1.  **Start Game**: Click "Start Combat" (開始戰鬥).
-2.  **Check Enemy Intent**: Look at the icon above the enemy.
-    *   ⚔️ = Attacking (Use Defense!)
-    *   🛡️ = Defending (Use Attack!)
-3.  **Construct Hexagram**:
-    *   Click **Yin (--)** or **Yang (—)** buttons to build a Hexagram from bottom to top.
-    *   You need exactly **6 lines** to cast a spell.
-4.  **Preview Stats**: Watch the preview box to see the calculated ATK/DEF/HEAL values.
-5.  **Cast Spell**: Click **CAST** to unleash your magic!
-6.  **Win Condition**: Reduce the Enemy HP to 0 before you die.
+### 前置需求
+- Python（大多數系統已預裝）或 Node.js
 
-## 🛠️ Tech Stack
+### 執行步驟
+1. 複製或下載此專案
+2. 在專案資料夾開啟終端機
+3. 執行本地伺服器：
+   - **Python**：`py -m http.server`（或 `python3 -m http.server`）
+   - **Node**：`npx serve`
+4. 開啟瀏覽器前往 `http://localhost:8000`（或終端機顯示的埠號）
 
-*   **Core Logic**: [Alpine.js](https://alpinejs.dev/) (Lightweight reactive framework)
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/) (Utility-first CSS)
-*   **Icons**: Standard Unicode Emojis
+## 🎮 遊戲玩法
 
-## 📂 Project Structure
+1. **開始遊戲**：點擊「開始戰鬥」
+2. **查看敵人意圖**：觀察敵人上方的圖示
+   - ⚔️ = 攻擊（數字顯示傷害值）
+   - 🛡️ = 防禦
+3. **打出八卦卡牌**：
+   - 點擊手牌中的卡牌（每張消耗 1 點能量）
+   - 每張卡牌添加 3 條爻線到卦象
+   - 將滑鼠移到卡牌上可查看屬性
+4. **需要時撤回**：點擊「撤回」按鈕移除最後一張卡牌
+5. **施放法術**：當有 6 條爻線時，點擊**施法**
+6. **識別卦象**：從 4 個選項中選擇正確的卦象
+   - ✅ 答對 = 1.5 倍屬性加成！
+   - ❌ 答錯 = 正常屬性
+7. **結束回合**：點擊「結束回合」抽新牌並恢復能量
+8. **勝利條件**：在你死亡前將敵人 HP 降至 0！
+
+## 🛠️ 技術架構
+
+- **核心邏輯**：[Alpine.js](https://alpinejs.dev/)（輕量級響應式框架）
+- **樣式**：[Tailwind CSS](https://tailwindcss.com/)（實用優先的 CSS）
+- **圖示**：標準 Unicode 表情符號與八卦符號
+- **資料**：64 卦易經卦象（注音標示）
+
+## 📂 專案結構
 
 ```
 Yi-Construct/
-├── index.html          # Main Game UI
+├── index.html          # 主要遊戲 UI
 ├── src/
-│   ├── engine.js       # Game Logic & State Management
-│   └── data.js         # Hexagram Data Definitions
-└── README.md           # Documentation
+│   ├── engine.js       # 遊戲邏輯與狀態管理
+│   └── data.js         # 64 卦定義（注音）
+└── README.md           # 說明文件
 ```
 
+## 🎲 遊戲機制
+
+### 卦象構築
+- **由下而上**：爻線從下（初爻）到上（上爻）依序添加
+- **下卦**：第 1-3 爻
+- **上卦**：第 4-6 爻
+- **二進位編碼**：每條爻為 0（陰）或 1（陽）
+
+### 屬性計算
+- **基礎屬性**：下卦 + 上卦屬性總和
+- **測驗加成**：識別正確卦象可獲得 1.5 倍加成
+- **效果應用**：攻擊傷害敵人、防禦增加護盾、治療恢復 HP
+
+### 能量與卡牌管理
+- **起始手牌**：5 張
+- **能量**：每回合 3 點
+- **棄牌**：打出的卡牌進入棄牌堆
+- **洗牌**：牌庫空時，棄牌堆洗入牌庫
+
+## 📖 易經知識
+
+本遊戲基於《易經》的六十四卦系統：
+- **八卦**：乾、坤、震、巽、坎、離、艮、兌
+- **六十四卦**：由兩個八卦（上卦與下卦）組合而成
+- **卦辭**：每個卦象都有對應的吉凶解釋
+- **注音標示**：使用台灣教育部標準注音符號
+
 ---
-*Created by Antigravity*
+
+*以 ☯️ 創作於 Antigravity*
