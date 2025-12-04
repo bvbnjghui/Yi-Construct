@@ -421,18 +421,20 @@ export default function gameEngine() {
                 helpTitle: this.lang === 'zh' ? '遊戲說明' : 'Instructions',
                 helpContent: this.lang === 'zh'
                     ? [
-                        "1. 從手牌打出八卦卡 (消耗 1 氣)。",
+                        "1. 從手牌打出八卦卡（消耗 1 氣）。",
                         "2. 每個八卦包含三爻，兩張卡組成一個六爻卦。",
-                        "3. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
-                        "4. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
-                        "5. 點擊 '結束回合' 補充手牌和氣。"
+                        "3. 六爻完成後，識別正確的卦象可獲得 1.5 倍加成！",
+                        "4. 屬性：火=攻擊, 地=防禦(護盾), 水=治療。",
+                        "5. 點擊「撤回」可移除最後打出的卡牌。",
+                        "6. 點擊「結束回合」補充手牌和氣。"
                     ]
                     : [
                         "1. Play Trigram cards from hand (Cost 1 Energy).",
                         "2. Each Trigram has 3 lines. 2 Cards = 1 Hexagram.",
-                        "3. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
-                        "4. Resonance: If Lower == Upper, stats x1.5!",
-                        "5. Click 'End Turn' to draw new cards and restore Energy."
+                        "3. After 6 lines, identify the correct Hexagram for 1.5x bonus!",
+                        "4. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
+                        "5. Click 'Undo' to remove the last played card.",
+                        "6. Click 'End Turn' to draw new cards and restore Energy."
                     ]
             };
         }
