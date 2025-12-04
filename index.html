@@ -239,17 +239,30 @@
                 <div class="flex gap-2 items-end h-full pb-2 px-10 overflow-x-auto w-full justify-center">
                     <template x-for="(card, index) in hand" :key="card.id">
                         <button @click="playCard(index)"
-                            class="w-16 h-24 rounded-lg shadow-lg border-2 flex flex-col items-center justify-between p-2 transition-transform hover:-translate-y-2 active:scale-95 relative group"
-                            :class="card.type === 1 ? 'bg-slate-800 border-amber-600 text-amber-100' : 'bg-slate-800 border-cyan-600 text-cyan-100'">
+                            class="w-20 h-28 rounded-lg shadow-lg border-2 flex flex-col items-center justify-center p-1 transition-transform hover:-translate-y-2 active:scale-95 relative group bg-slate-800 border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-100">
 
                             <!-- Cost -->
                             <div
-                                class="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-xs font-bold text-yellow-400 shadow">
+                                class="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-xs font-bold text-yellow-400 shadow z-10">
                                 <span x-text="card.cost"></span>
                             </div>
 
-                            <div class="text-2xl mt-2 whitespace-nowrap" x-text="card.type === 1 ? '—' : '--'"></div>
-                            <div class="text-xs font-bold" x-text="card.name[lang]"></div>
+                            <!-- Icon -->
+                            <div class="text-4xl mb-1" x-text="card.icon"></div>
+
+                            <!-- Name -->
+                            <div class="text-xs font-bold text-center leading-tight" x-text="card.name[lang]"></div>
+
+                            <!-- Stats Hint (Hover) -->
+                            <div
+                                class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 text-xs p-2 rounded w-32 hidden group-hover:block z-20 pointer-events-none">
+                                <div class="flex justify-between text-red-400" x-show="card.stats.atk > 0">
+                                    <span>ATK</span><span x-text="card.stats.atk"></span></div>
+                                <div class="flex justify-between text-cyan-400" x-show="card.stats.def > 0">
+                                    <span>DEF</span><span x-text="card.stats.def"></span></div>
+                                <div class="flex justify-between text-green-400" x-show="card.stats.heal > 0">
+                                    <span>HEAL</span><span x-text="card.stats.heal"></span></div>
+                            </div>
                         </button>
                     </template>
                 </div>

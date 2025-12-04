@@ -8,7 +8,7 @@ const TRIGRAM_STATS = {
     3: { name: { zh: "澤", en: "Lake" }, atk: 4, def: 0, heal: 2, icon: "☱" },
     4: { name: { zh: "山", en: "Mountain" }, atk: 0, def: 6, heal: 0, icon: "☶" },
     5: { name: { zh: "火", en: "Fire" }, atk: 10, def: 0, heal: 0, icon: "☲" },
-    6: { name: { zh: "風", en: "Wind" }, atk: 4, def: 0, heal: 0, icon: "☴" }, // Keeping simple for now
+    6: { name: { zh: "風", en: "Wind" }, atk: 4, def: 0, heal: 0, icon: "☴" },
     7: { name: { zh: "天", en: "Heaven" }, atk: 8, def: 0, heal: 0, icon: "☰" }
 };
 
@@ -74,10 +74,19 @@ export default function gameEngine() {
         initDeck() {
             this.deck = [];
             let idCounter = 0;
-            // 6 Yang (1), 6 Yin (0)
-            for (let i = 0; i < 6; i++) {
-                this.deck.push({ id: idCounter++, type: 1, cost: 1, name: { zh: '陽', en: 'Yang' } });
-                this.deck.push({ id: idCounter++, type: 0, cost: 1, name: { zh: '陰', en: 'Yin' } });
+            // 8 Trigrams, 2 copies each = 16 cards
+            for (let type = 0; type < 8; type++) {
+                const stats = TRIGRAM_STATS[type];
+                for (let i = 0; i < 2; i++) {
+                    this.deck.push({
+                        id: idCounter++,
+                        type: type,
+                        cost: 1,
+                        name: stats.name,
+                        icon: stats.icon,
+                        stats: stats
+                    });
+                }
             }
         },
 
@@ -115,17 +124,22 @@ export default function gameEngine() {
                 return;
             }
 
-            // Check Stack Limit
-            if (this.lines.length >= 6) {
-                this.log(this.lang === 'zh' ? "卦象已滿!" : "Hexagram full!");
+            // Check Stack Limit (Max 6 lines)
+            if (this.lines.length > 3) {
+                this.log(this.lang === 'zh' ? "卦象將滿!" : "Hexagram full!");
                 return;
             }
 
             // Pay Cost
             this.player.energy -= card.cost;
 
-            // Effect: Add Line
-            this.lines.push(card.type);
+            // Effect: Add 3 Lines (Trigram)
+            const type = card.type;
+            const l1 = type & 1;
+            const l2 = (type >> 1) & 1;
+            const l3 = (type >> 2) & 1;
+
+            this.lines.push(l1, l2, l3);
 
             // Move to Discard
             this.hand.splice(cardIndex, 1);
@@ -323,20 +337,18 @@ export default function gameEngine() {
                 helpTitle: this.lang === 'zh' ? '遊戲說明' : 'Instructions',
                 helpContent: this.lang === 'zh'
                     ? [
-                        "1. 從手牌打出陰陽爻 (消耗 1 氣)。",
-                        "2. 構建六爻卦象來施放技能。",
-                        "3. 每個卦由兩個八卦(上卦/下卦)組成。",
-                        "4. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
-                        "5. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
-                        "6. 點擊 '結束回合' 補充手牌和氣。"
+                        "1. 從手牌打出八卦卡 (消耗 1 氣)。",
+                        "2. 每個八卦包含三爻，兩張卡組成一個六爻卦。",
+                        "3. 屬性: 火=攻擊, 地=防禦(護盾), 水=治療。",
+                        "4. 共鳴: 如果上下卦相同 (例如乾為天)，效果 x1.5 倍！",
+                        "5. 點擊 '結束回合' 補充手牌和氣。"
                     ]
                     : [
-                        "1. Play Yin/Yang cards from hand (Cost 1 Energy).",
-                        "2. Build Hexagrams to cast spells.",
-                        "3. Each Hexagram has Lower & Upper Trigrams.",
-                        "4. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
-                        "5. Resonance: If Lower == Upper, stats x1.5!",
-                        "6. Click 'End Turn' to draw new cards and restore Energy."
+                        "1. Play Trigram cards from hand (Cost 1 Energy).",
+                        "2. Each Trigram has 3 lines. 2 Cards = 1 Hexagram.",
+                        "3. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
+                        "4. Resonance: If Lower == Upper, stats x1.5!",
+                        "5. Click 'End Turn' to draw new cards and restore Energy."
                     ]
             };
         }
