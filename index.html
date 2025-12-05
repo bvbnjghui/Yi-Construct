@@ -157,6 +157,50 @@
             </div>
         </div>
 
+        <!-- === REWARD MODAL === -->
+        <div x-show="gameState === 'reward'"
+            class="absolute inset-0 z-[60] bg-black/90 backdrop-blur flex items-center justify-center p-4" x-transition
+            x-cloak>
+            <div class="bg-slate-900 border border-amber-600 rounded-xl p-6 max-w-md w-full shadow-2xl relative">
+                <h2 class="text-2xl font-bold text-amber-500 mb-4 text-center"
+                    x-text="lang === 'zh' ? '戰鬥勝利！選擇獎勵' : 'Victory! Choose Reward'"></h2>
+                <p class="text-center text-slate-400 text-sm mb-4" x-show="currentEnemyIndex + 1 < maxEnemies"
+                    x-text="lang === 'zh' ? `準備面對下一個敵人 (${currentEnemyIndex + 2}/${maxEnemies})` : `Prepare for next enemy (${currentEnemyIndex + 2}/${maxEnemies})`">
+                </p>
+
+                <!-- Reward Cards -->
+                <div class="space-y-3 mb-4">
+                    <template x-for="(card, index) in rewardCards" :key="index">
+                        <button @click="addCardToDeck(index)"
+                            class="w-full px-4 py-3 bg-slate-800 hover:bg-amber-600 border border-slate-600 hover:border-amber-500 rounded-lg text-left transition-all group flex items-center gap-3">
+                            <!-- Icon -->
+                            <div class="text-4xl" x-text="card.icon"></div>
+                            <!-- Info -->
+                            <div class="flex-1">
+                                <div class="font-bold text-amber-400 group-hover:text-white flex items-center gap-2">
+                                    <span x-text="card.name[lang]"></span>
+                                    <span class="text-xs bg-amber-500/20 px-2 py-0.5 rounded">⚡×<span
+                                            x-text="card.changingLines ? card.changingLines.length : 0"></span></span>
+                                </div>
+                                <div class="text-xs text-slate-400 group-hover:text-slate-200 mt-1 flex gap-2">
+                                    <span x-show="card.stats.atk > 0">ATK: <span x-text="card.stats.atk"></span></span>
+                                    <span x-show="card.stats.def > 0">DEF: <span x-text="card.stats.def"></span></span>
+                                    <span x-show="card.stats.heal > 0">HEAL: <span
+                                            x-text="card.stats.heal"></span></span>
+                                </div>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Skip Button -->
+                <button @click="skipReward()"
+                    class="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-slate-300 hover:text-white transition-all"
+                    x-text="lang === 'zh' ? '跳過' : 'Skip'">
+                </button>
+            </div>
+        </div>
+
         <!-- === BACK TO MENU BUTTON (Top Right) === -->
         <button @click="backToMenu()" x-show="gameState === 'player_turn' || gameState === 'enemy_turn'"
             class="absolute top-4 right-4 z-40 px-2 py-1 text-[10px] font-bold text-slate-500 border border-slate-700 rounded hover:bg-slate-800 hover:text-slate-300 transition-colors"
@@ -172,6 +216,12 @@
                 <span x-show="enemy.intent.includes('attack')">⚔️</span>
                 <span x-show="enemy.intent === 'defend'">🛡️</span>
                 <span class="font-bold text-red-400" x-text="enemy.intentVal > 0 ? enemy.intentVal : ''"></span>
+            </div>
+
+            <!-- Enemy Counter -->
+            <div
+                class="absolute top-4 right-4 bg-slate-900 px-3 py-1 rounded-full border border-slate-600 text-xs text-slate-400 font-bold shadow-lg">
+                <span x-text="currentEnemyIndex + 1"></span>/<span x-text="maxEnemies"></span>
             </div>
 
             <!-- Enemy Avatar -->
@@ -326,6 +376,12 @@
                             <div
                                 class="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-xs font-bold text-yellow-400 shadow z-10">
                                 <span x-text="card.cost"></span>
+                            </div>
+
+                            <!-- 變爻標記 -->
+                            <div x-show="card.isChanging"
+                                class="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg z-10">
+                                ⚡×<span x-text="card.changingLines ? card.changingLines.length : 0"></span>
                             </div>
 
                             <!-- Icon -->

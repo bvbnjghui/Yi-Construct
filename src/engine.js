@@ -12,6 +12,34 @@ const TRIGRAM_STATS = {
     7: { name: { zh: "天", en: "Heaven" }, atk: 8, def: 0, heal: 0, icon: "☰" }
 };
 
+// Enemy Roster Definition
+const ENEMY_ROSTER = [
+    {
+        name: { zh: "心魔", en: "Inner Demon" },
+        maxHp: 60,
+        icon: "👹",
+        aiPattern: 'balanced' // 60% attack, 30% defend, 10% heavy
+    },
+    {
+        name: { zh: "幻影", en: "Phantom" },
+        maxHp: 80,
+        icon: "👻",
+        aiPattern: 'aggressive' // 80% attack, 10% defend, 10% heavy
+    },
+    {
+        name: { zh: "守護者", en: "Guardian" },
+        maxHp: 100,
+        icon: "🗿",
+        aiPattern: 'defensive' // 40% attack, 50% defend, 10% heavy
+    },
+    {
+        name: { zh: "暗影龍", en: "Shadow Dragon" },
+        maxHp: 120,
+        icon: "🐉",
+        aiPattern: 'boss' // 50% attack, 20% defend, 30% heavy
+    }
+];
+
 // 生成變爻卡池（56 張）
 function generateChangingCardsPool() {
     const pool = [];
@@ -82,6 +110,10 @@ export default function gameEngine() {
             icon: "👹"
         },
 
+        // Enemy Progression
+        currentEnemyIndex: 0,
+        maxEnemies: ENEMY_ROSTER.length,
+
         // Deck Builder State
         deck: [],
         hand: [],
@@ -112,8 +144,7 @@ export default function gameEngine() {
             this.player.maxHp = 50;
             this.player.block = 0;
             this.player.energy = 3;
-            this.enemy.hp = 60;
-            this.enemy.maxHp = 60;
+            this.currentEnemyIndex = 0;
             this.lines = [];
             this.combatLog = [];
 
@@ -123,7 +154,18 @@ export default function gameEngine() {
             this.discard = [];
             this.drawCards(5);
 
+            this.loadEnemy(0);
             this.startTurn();
+        },
+
+        loadEnemy(index) {
+            const enemyData = ENEMY_ROSTER[index];
+            this.enemy.name = enemyData.name;
+            this.enemy.maxHp = enemyData.maxHp;
+            this.enemy.hp = enemyData.maxHp;
+            this.enemy.icon = enemyData.icon;
+            this.enemy.aiPattern = enemyData.aiPattern;
+            this.currentEnemyIndex = index;
         },
 
         initDeck() {
@@ -305,10 +347,32 @@ export default function gameEngine() {
 
         generateEnemyIntent() {
             const rand = Math.random();
-            if (rand < 0.6) {
+            const pattern = this.enemy.aiPattern || 'balanced';
+
+            let attackChance, defendChance, heavyChance;
+
+            switch (pattern) {
+                case 'aggressive':
+                    attackChance = 0.8;
+                    defendChance = 0.9;
+                    break;
+                case 'defensive':
+                    attackChance = 0.4;
+                    defendChance = 0.9;
+                    break;
+                case 'boss':
+                    attackChance = 0.5;
+                    defendChance = 0.7;
+                    break;
+                default: // balanced
+                    attackChance = 0.6;
+                    defendChance = 0.9;
+            }
+
+            if (rand < attackChance) {
                 this.enemy.intent = 'attack';
                 this.enemy.intentVal = Math.floor(Math.random() * 6) + 8; // 8-13 dmg
-            } else if (rand < 0.9) {
+            } else if (rand < defendChance) {
                 this.enemy.intent = 'defend';
                 this.enemy.intentVal = 0;
             } else {
@@ -533,12 +597,41 @@ export default function gameEngine() {
             const card = this.rewardCards[cardIndex];
             this.deck.push({ ...card, id: Date.now() + Math.random() });
             this.rewardCards = [];
-            this.gameState = 'victory';
+            this.continueToNextEnemy();
         },
 
         skipReward() {
             this.rewardCards = [];
-            this.gameState = 'victory';
+            this.continueToNextEnemy();
+        },
+
+        continueToNextEnemy() {
+            // Check if there are more enemies
+            if (this.currentEnemyIndex + 1 < this.maxEnemies) {
+                // Load next enemy
+                this.loadEnemy(this.currentEnemyIndex + 1);
+
+                // Reset combat state
+                this.lines = [];
+                this.hand = [];
+                this.discard = [];
+                this.player.block = 0;
+                this.player.energy = this.player.maxEnergy;
+
+                // Draw new hand
+                this.drawCards(5);
+
+                // Log transition
+                this.log(this.lang === 'zh'
+                    ? `--- 敵人 ${this.currentEnemyIndex + 1}/${this.maxEnemies} ---`
+                    : `--- Enemy ${this.currentEnemyIndex + 1}/${this.maxEnemies} ---`);
+
+                // Start new turn
+                this.startTurn();
+            } else {
+                // All enemies defeated - victory!
+                this.gameState = 'victory';
+            }
         },
 
         enemyTurn() {
