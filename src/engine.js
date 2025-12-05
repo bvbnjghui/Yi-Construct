@@ -125,7 +125,7 @@ export default function gameEngine() {
 
         // 變爻系統狀態
         rewardCards: [],
-        transformationData: null,
+        transformationData: { changingPositions: [] },  // 初始化為空對象而非 null
         selectionPhase: null,  // 'original' | 'transformed'
         bonusMultiplier: 1.0,
         playedCardsThisTurn: [],
@@ -277,7 +277,8 @@ export default function gameEngine() {
                     // 將相對位置轉換為絕對位置
                     const offset = cardIndex * 3;
                     card.changingLines.forEach(relativePos => {
-                        changingPositions.push(offset + relativePos);
+                        const absolutePos = offset + relativePos;
+                        changingPositions.push(absolutePos);
                     });
                 }
             });
@@ -384,10 +385,13 @@ export default function gameEngine() {
         castHexagram() {
             if (this.lines.length !== 6) return;
 
+            // 只使用最後 2 張卡來計算變卦（當前的卦象）
+            const currentHexagramCards = this.playedCardsThisTurn.slice(-2);
+
             // 計算變卦資訊
             const transformation = this.calculateTransformation(
                 this.lines,
-                this.playedCardsThisTurn
+                currentHexagramCards
             );
 
             // 計算本卦屬性
@@ -426,10 +430,10 @@ export default function gameEngine() {
                     transformedHeal * transformation.transformedWeight
                 );
 
-                // 儲存資訊
+                // 儲存資訊 - 保存本卦和變卦
                 this.pendingHexagram = {
-                    hexVal: transformation.originalHex,
-                    transformedHexVal: transformation.transformedHex,
+                    hexVal: transformation.originalHex,  // 本卦
+                    transformedHexVal: transformation.transformedHex,  // 變卦
                     atk: finalAtk,
                     def: finalDef,
                     heal: finalHeal,
@@ -437,7 +441,7 @@ export default function gameEngine() {
                 };
 
                 this.transformationData = transformation;
-                this.selectionPhase = 'original';
+                this.selectionPhase = 'original';  // 先測驗本卦
                 this.bonusMultiplier = 1.0;
             } else {
                 // 無變卦
@@ -456,6 +460,7 @@ export default function gameEngine() {
         startSelection() {
             let hexVal;
 
+            // 根據測驗階段選擇正確的卦象
             if (this.selectionPhase === 'transformed') {
                 hexVal = this.pendingHexagram.transformedHexVal;
             } else {
@@ -494,8 +499,8 @@ export default function gameEngine() {
         confirmSelection(optionIndex) {
             const selected = this.selectionOptions[optionIndex];
 
-            // 無變爻的情況（selectionPhase 為 null）
-            if (!this.transformationData) {
+            // 無變爻的情況（hasTransformation 為 false 或不存在）
+            if (!this.transformationData.hasTransformation) {
                 // 單次測驗
                 const bonus = selected.isCorrect ? 1.5 : 1.0;
                 this.executeHexagram(
@@ -578,7 +583,7 @@ export default function gameEngine() {
             // Consume Stack
             this.lines = [];
             this.playedCardsThisTurn = [];
-            this.transformationData = null;
+            this.transformationData = { changingPositions: [] };  // 重置為空對象
             this.selectionPhase = null;
             this.bonusMultiplier = 1.0;
             this.pendingHexagram = null;
