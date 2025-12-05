@@ -88,10 +88,13 @@ export default function gameEngine() {
     return {
         lines: [],
         lang: 'zh',
+        HEX_DATA,  // 暴露給 Alpine.js 使用
 
         // Combat State
         gameState: 'menu', // 'menu', 'player_turn', 'enemy_turn', 'selection', 'reward', 'gameover', 'victory'
         showHelp: false,
+        showCompendium: false,
+        selectedHexagram: null,
 
         player: {
             hp: 50,
@@ -758,6 +761,11 @@ export default function gameEngine() {
                         "6. Click 'End Turn' to draw new cards and restore Energy."
                     ]
             };
+        },
+
+        // 輔助函數：獲取卦象的某一爻（0-5）的值（0或1）
+        getHexagramLine(hexId, lineIndex) {
+            return (hexId >> lineIndex) & 1;
         }
     };
 }
