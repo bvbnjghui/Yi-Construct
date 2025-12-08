@@ -750,7 +750,8 @@ export default function gameEngine() {
                         "3. 六爻完成後，識別正確的卦象可獲得 1.5 倍加成！",
                         "4. 屬性：火=攻擊, 地=防禦(護盾), 水=治療。",
                         "5. 點擊「撤回」可移除最後打出的卡牌。",
-                        "6. 點擊「結束回合」補充手牌和氣。"
+                        "6. 點擊「結束回合」補充手牌和氣。",
+                        "7. 隨時點擊「六十四卦圖鑑」查看卦象詳解。"
                     ]
                     : [
                         "1. Play Trigram cards from hand (Cost 1 Energy).",
@@ -758,7 +759,8 @@ export default function gameEngine() {
                         "3. After 6 lines, identify the correct Hexagram for 1.5x bonus!",
                         "4. Stats: Fire=Atk, Earth=Def(Block), Water=Heal.",
                         "5. Click 'Undo' to remove the last played card.",
-                        "6. Click 'End Turn' to draw new cards and restore Energy."
+                        "6. Click 'End Turn' to draw new cards and restore Energy.",
+                        "7. Check 'Hexagram Compendium' anytime for details."
                     ]
             };
         },
