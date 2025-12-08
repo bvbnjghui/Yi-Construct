@@ -1,44 +1,5 @@
 import { HEX_DATA } from './data.js';
-
-// Trigram Stats Definition
-const TRIGRAM_STATS = {
-    0: { name: { zh: "地", en: "Earth" }, atk: 0, def: 8, heal: 0, icon: "☷" },
-    1: { name: { zh: "雷", en: "Thunder" }, atk: 6, def: 0, heal: 0, icon: "☳" },
-    2: { name: { zh: "水", en: "Water" }, atk: 3, def: 0, heal: 3, icon: "☵" },
-    3: { name: { zh: "澤", en: "Lake" }, atk: 4, def: 0, heal: 2, icon: "☱" },
-    4: { name: { zh: "山", en: "Mountain" }, atk: 0, def: 6, heal: 0, icon: "☶" },
-    5: { name: { zh: "火", en: "Fire" }, atk: 10, def: 0, heal: 0, icon: "☲" },
-    6: { name: { zh: "風", en: "Wind" }, atk: 4, def: 0, heal: 0, icon: "☴" },
-    7: { name: { zh: "天", en: "Heaven" }, atk: 8, def: 0, heal: 0, icon: "☰" }
-};
-
-// Enemy Roster Definition
-const ENEMY_ROSTER = [
-    {
-        name: { zh: "心魔", en: "Inner Demon" },
-        maxHp: 60,
-        icon: "👹",
-        aiPattern: 'balanced' // 60% attack, 30% defend, 10% heavy
-    },
-    {
-        name: { zh: "幻影", en: "Phantom" },
-        maxHp: 80,
-        icon: "👻",
-        aiPattern: 'aggressive' // 80% attack, 10% defend, 10% heavy
-    },
-    {
-        name: { zh: "守護者", en: "Guardian" },
-        maxHp: 100,
-        icon: "🗿",
-        aiPattern: 'defensive' // 40% attack, 50% defend, 10% heavy
-    },
-    {
-        name: { zh: "暗影龍", en: "Shadow Dragon" },
-        maxHp: 120,
-        icon: "🐉",
-        aiPattern: 'boss' // 50% attack, 20% defend, 30% heavy
-    }
-];
+import { PLAYER_CONFIG, TRIGRAM_STATS, ENEMY_ROSTER } from './config/settings.js';
 
 // 生成變爻卡池（56 張）
 function generateChangingCardsPool() {
@@ -97,11 +58,11 @@ export default function gameEngine() {
         selectedHexagram: null,
 
         player: {
-            hp: 50,
-            maxHp: 50,
+            hp: PLAYER_CONFIG.INITIAL_HP,
+            maxHp: PLAYER_CONFIG.INITIAL_HP,
             block: 0,
-            energy: 3,
-            maxEnergy: 3
+            energy: PLAYER_CONFIG.MAX_ENERGY,
+            maxEnergy: PLAYER_CONFIG.MAX_ENERGY
         },
 
         enemy: {
@@ -110,7 +71,8 @@ export default function gameEngine() {
             maxHp: 60,
             intent: 'attack', // 'attack', 'defend', 'buff'
             intentVal: 0,
-            icon: "👹"
+            icon: "👹",
+            aiPattern: 'balanced'
         },
 
         // Enemy Progression
@@ -143,10 +105,10 @@ export default function gameEngine() {
         // Actions
         startGame() {
             this.gameState = 'player_turn';
-            this.player.hp = 50;
-            this.player.maxHp = 50;
+            this.player.hp = PLAYER_CONFIG.INITIAL_HP;
+            this.player.maxHp = PLAYER_CONFIG.INITIAL_HP;
             this.player.block = 0;
-            this.player.energy = 3;
+            this.player.energy = PLAYER_CONFIG.MAX_ENERGY;
             this.currentEnemyIndex = 0;
             this.lines = [];
             this.combatLog = [];
@@ -155,7 +117,7 @@ export default function gameEngine() {
             this.shuffle(this.deck);
             this.hand = [];
             this.discard = [];
-            this.drawCards(5);
+            this.drawCards(PLAYER_CONFIG.HAND_SIZE);
 
             this.loadEnemy(0);
             this.startTurn();
@@ -345,7 +307,7 @@ export default function gameEngine() {
             this.player.block = 0; // Reset block
             this.player.energy = this.player.maxEnergy; // Reset Energy
             this.generateEnemyIntent();
-            this.drawCards(5); // Draw new hand
+            this.drawCards(PLAYER_CONFIG.HAND_SIZE); // Draw new hand
             this.log(this.lang === 'zh' ? "--- 玩家回合 ---" : "--- Player Turn ---");
         },
 
@@ -482,11 +444,11 @@ export default function gameEngine() {
 
             // Build options array
             const options = [
-                { id: hexVal, name: correctHex.name, description: correctHex.description, isCorrect: true },
+                { id: hexVal, name: correctHex.name, oracle: correctHex.oracle, isCorrect: true },
                 ...randomIncorrect.map(id => ({
                     id,
                     name: HEX_DATA[id].name,
-                    description: HEX_DATA[id].description,
+                    oracle: HEX_DATA[id].oracle,
                     isCorrect: false
                 }))
             ];
@@ -627,7 +589,7 @@ export default function gameEngine() {
                 this.player.energy = this.player.maxEnergy;
 
                 // Draw new hand
-                this.drawCards(5);
+                this.drawCards(PLAYER_CONFIG.HAND_SIZE);
 
                 // Log transition
                 this.log(this.lang === 'zh'
