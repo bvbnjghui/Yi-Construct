@@ -178,9 +178,10 @@
         <div x-show="selectedHexagram !== null"
             class="absolute inset-0 z-[70] bg-black/90 backdrop-blur flex items-center justify-center p-4" x-transition
             x-cloak>
-            <div class="bg-slate-900 border border-amber-600 rounded-xl p-6 max-w-md w-full shadow-2xl relative">
+            <div
+                class="bg-slate-900 border border-amber-600 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
                 <button @click="selectedHexagram = null"
-                    class="absolute top-4 right-4 text-slate-500 hover:text-white text-2xl">✕</button>
+                    class="absolute top-4 right-4 text-slate-500 hover:text-white text-2xl z-10">✕</button>
 
                 <template x-if="selectedHexagram !== null">
                     <div>
@@ -209,15 +210,29 @@
                         </div>
 
                         <!-- Hexagram Info -->
-                        <div class="text-center mb-4">
-                            <div class="text-sm text-slate-500 mb-2">
+                        <div class="mb-4">
+                            <div class="text-sm text-slate-500 mb-2 text-center">
                                 <span x-text="lang === 'zh' ? '卦象編號' : 'Hexagram'"></span> #<span
                                     x-text="selectedHexagram"></span>
                             </div>
-                            <h3 class="text-2xl font-bold text-amber-400 mb-2"
+                            <h3 class="text-2xl font-bold text-amber-400 mb-3 text-center"
                                 x-text="HEX_DATA[selectedHexagram].name[lang]"></h3>
-                            <p class="text-slate-300 text-sm leading-relaxed"
-                                x-text="HEX_DATA[selectedHexagram].description[lang]"></p>
+
+                            <!-- 卦辭 (Original Text) -->
+                            <div class="mb-3 bg-slate-950 rounded-lg p-3 border border-slate-800">
+                                <div class="text-xs text-amber-500 font-bold mb-1"
+                                    x-text="lang === 'zh' ? '卦辭' : 'Oracle'"></div>
+                                <p class="text-slate-300 text-sm leading-relaxed italic"
+                                    x-text="HEX_DATA[selectedHexagram].oracle[lang]"></p>
+                            </div>
+
+                            <!-- 白話解釋 (Interpretation) -->
+                            <div class="bg-slate-950 rounded-lg p-3 border border-slate-800">
+                                <div class="text-xs text-cyan-500 font-bold mb-1"
+                                    x-text="lang === 'zh' ? '白話解釋' : 'Interpretation'"></div>
+                                <p class="text-slate-300 text-sm leading-relaxed"
+                                    x-text="HEX_DATA[selectedHexagram].interpretation[lang]"></p>
+                            </div>
                         </div>
 
                         <div class="text-center">
