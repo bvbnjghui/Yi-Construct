@@ -191,16 +191,18 @@
                                 <div class="w-full h-4 flex items-center gap-2">
                                     <div class="text-[10px] text-slate-500 font-bold w-6 text-right"
                                         x-text="['初', '二', '三', '四', '五', '上'][i-1]"></div>
-                                    <div class="flex-1">
+                                    <div class="flex-1 h-full">
                                         <!-- Yang line (solid) -->
-                                        <div x-show="getHexagramLine(selectedHexagram, i-1) === 1"
-                                            class="h-full w-full bg-amber-500 rounded shadow-sm"></div>
+                                        <template x-if="getHexagramLine(selectedHexagram, i-1) === 1">
+                                            <div class="h-full w-full bg-amber-500 rounded shadow-sm"></div>
+                                        </template>
                                         <!-- Yin line (broken) -->
-                                        <div x-show="getHexagramLine(selectedHexagram, i-1) === 0"
-                                            class="flex gap-2 h-full">
-                                            <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
-                                            <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
-                                        </div>
+                                        <template x-if="getHexagramLine(selectedHexagram, i-1) === 0">
+                                            <div class="flex gap-2 h-full">
+                                                <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
+                                                <div class="h-full w-1/2 bg-cyan-600 rounded shadow-sm"></div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
